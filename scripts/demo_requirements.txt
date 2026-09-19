@@ -1,0 +1,17 @@
+# 端到端 Demo 依赖
+#
+# ⚠️ 与 scaffold 的 requirements/requirements.txt **有重叠**（langchain / langgraph /
+#    langchain-openai / prometheus-client 两边都有）。这里不是"独立最小集"，
+#    只是"单独跑 demo 时够用的那一份"。
+#    曾误写为"与 scaffold 的 requirements.txt 不重叠"——不实，已更正。
+#
+# ⚠️ 下界必须与 LangChain 1.x 同代：langchain-openai 0.x / langchain-core 0.x 属上一代，
+#    与 langchain>=1.0 **无交集**（pip 报冲突无解，装不上）。曾误写为 >=0.1.0 / >=0.3.0。
+#    改任何下界前先实装验证——见 FACTS.md F-017。
+
+python-dotenv>=1.0
+langchain>=1.0
+langchain-core>=1.0
+langchain-openai>=1.0
+langgraph>=1.0
+prometheus-client>=0.20

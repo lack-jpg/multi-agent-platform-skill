@@ -1,0 +1,113 @@
+name: CI
+
+# 本 skill 自身的 CI。注意与 scaffold 生成的**下游项目** CI 是两回事
+# （那个模板在 scripts/scaffold_project.py 里，随产物一起生成）。
+#
+# 为什么需要它：在此之前，四个闸门全靠"人记得跑"。本 skill 的主题正是
+# "约定必须有东西强制"，自己却只靠自觉——这个 workflow 补上这一环。
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          # 3.12 是 SKILL.md §6 声明的最低版本。**故意不用更新的版本**：
+          # 本机开发在 3.14，验不出 3.12 的差异（FACTS.md F-008 承认过这个局限），
+          # 3.12 这一格正是用来补那个盲区的。
+          python-version: "3.12"
+          cache: pip
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r scripts/ci_requirements.txt
+
+      # 顺序有讲究：先自检，再校验。
+      # 检查器静默失效时，它的输出与"检查通过"完全一样——先证明检查器活着。
+      - name: 0. 发布纪律（VERSION ↔ CHANGELOG）
+        run: python scripts/check_release.py
+
+      - name: 1. 检查器自检（证明检查器本身没坏）
+        run: |
+          python scripts/check_release.py --self-test
+          python scripts/check_architecture.py --self-test
+          python scripts/check_facts.py --self-test
+
+      - name: 2. 架构校验（skill 自身）
+        run: python scripts/check_architecture.py .
+
+      # --strict：依赖缺一个包，那条断言就静默降级为 SKIP，而 SKIP 不影响默认退出码
+      # ——输出与"核查通过"完全一样。CI 里依赖是齐的，出现 SKIP 就说明清单漏了包。
+      - name: 3. 事实核查（可执行断言真跑）
+        run: python scripts/check_facts.py --strict
+
+      - name: 4. demo 离线回归
+        run: python scripts/test_demo.py
+
+      # --strict：依赖缺失时"跳过"也算失败。CI 里依赖是齐的，不该有跳过。
+      - name: 5. scaffold 产物验收
+        run: python scripts/test_scaffold.py --strict
+
+      - name: 6. SKILL.md 行数上限
+        run: |
+          n=$(wc -l < SKILL.md)
+          echo "SKILL.md = $n 行（上限 300，见 SKILL_MAINTENANCE.md §8）"
+          if [ "$n" -gt 300 ]; then
+            echo "::error::SKILL.md 超过 300 行——放宽的是行数不是职责，见 §2 职责表"
+            exit 1
+          fi
+
+      - name: 7. 脚本可在声明的最低版本上解析 + 控制台编码防线
+        run: |
+          python - <<'PY'
+          import ast, pathlib, sys
+
+          def _has_console_guard(tree):
+              """有没有 `_stream.reconfigure(encoding="utf-8")` 这个调用。
+
+              不查子串：注释里提一句、或改名成 reconfigure_DISABLED 都会骗过子串查法。
+              无参数调用 `reconfigure()` 也不算——它不改编码，问题依旧。
+              """
+              for node in ast.walk(tree):
+                  if (isinstance(node, ast.Call)
+                          and isinstance(node.func, ast.Attribute)
+                          and node.func.attr == "reconfigure"
+                          and (any(k.arg == "encoding" for k in node.keywords)
+                               or node.args)):
+                      return True
+              return False
+
+          bad, unguarded = [], []
+          for p in sorted(pathlib.Path("scripts").glob("*.py")):
+              src = p.read_text(encoding="utf-8")
+              try:
+                  tree = ast.parse(src, filename=str(p), feature_version=(3, 12))
+              except SyntaxError as e:
+                  bad.append(f"{p}: {e}")
+                  continue
+              # Windows GBK 控制台下，print 出 ✓ ⚠ ✅ 这类符号会 UnicodeEncodeError。
+              # 中文本身 GBK 编得出，崩的是符号——**CI 跑在 Linux 上永远发现不了**，
+              # 所以只能静态查"有没有那段 reconfigure 防线"。
+              #
+              # 查 AST 而不是子串：查子串时注释里提一句 `reconfigure`、或把调用改名成
+              # `reconfigure_DISABLED`，都算"有防线"（都实测过）。
+              if not _has_console_guard(tree):
+                  unguarded.append(str(p))
+          if bad:
+              print("Python 3.12 语法不通过:"); print("\n".join(bad))
+          if unguarded:
+              print("缺少控制台编码防线（见 SKILL_MAINTENANCE.md §7）:")
+              print("\n".join("  " + u for u in unguarded))
+          if bad or unguarded:
+              sys.exit(1)
+          print("全部脚本符合 Python 3.12 语法，且都有控制台编码防线")
+          PY

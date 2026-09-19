@@ -1,0 +1,36 @@
+# 本 skill 自身 CI 所需依赖
+#
+# 与 demo_requirements.txt 的分工：
+#   demo_requirements.txt —— "跑 demo 的最小集"
+#   本文件               —— "跑全部四个闸门的最小集"（更宽：还要 pytest / fastapi /
+#                           pydantic-settings / loguru 来验证 scaffold 生成的产物）
+#
+# ⚠️ **刻意不锁版本**：本 skill 跟踪 LangChain 1.x / LangGraph 1.x 的当前代际，
+#    锁死版本会让 CI 失去"上游变了我们会知道"的作用。
+#    下界的正确性由 FACTS.md F-017 的可执行断言盯着。
+
+fastapi
+pydantic
+pydantic-settings
+loguru
+
+langchain>=1.0
+langchain-core>=1.0
+langchain-openai>=1.0
+langgraph>=1.0
+
+# F-007 需要：不加这两个包，checkpointer 契约那条会在 CI 里静默 SKIP（跳过≠通过）
+langgraph-checkpoint-postgres
+psycopg[binary,pool]
+
+prometheus-client
+python-dotenv
+packaging
+
+pytest
+pytest-asyncio
+
+# test_scaffold.py 的 L1 会跑产物的 `ruff check .`（与产物自己的 CI 同步）。
+# 不装 ruff 时那一级降级为"跳过"，而 CI 用的是 --strict —— 跳过即失败。
+# 换句话说：漏了这一行，CI 会红，**不会**静默少验一级。
+ruff

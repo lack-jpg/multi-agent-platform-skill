@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+venv/
+
+# 环境与密钥（scaffold 产物会生成 .env；.env.example 要入库）
+.env
+.env.*
+!.env.example
+
+# 本 skill 的临时/实验目录（元验证会用到，见 SKILL_MAINTENANCE §7）
+.tmp-*/
+
+# 编辑器 / 系统
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Claude Code 本机设置（含本机路径与权限，不入库）
+.claude/settings.local.json
+
+# workbuddy 本机会话笔记（含本机路径，不发布）
+.workbuddy/

@@ -1,0 +1,15 @@
+# 仓库内一律用 LF。
+#
+# 理由：CI 跑在 Linux，而开发机是 Windows（core.autocrlf 默认会把 LF 检出成 CRLF）。
+# 不统一的话，同一个文件在不同平台上换行符不同，diff 和 `wc -l` 之类的结果会漂。
+* text=auto eol=lf
+
+# 二进制文件不参与换行符转换
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary

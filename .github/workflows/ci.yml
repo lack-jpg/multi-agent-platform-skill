@@ -69,7 +69,7 @@ jobs:
             exit 1
           fi
 
-      - name: 7. 脚本可在声明的最低版本上解析 + 控制台编码防线
+      - name: 7. 脚本可在声明的最低版本上解析 + 控制台编码防线 + 不带 shebang
         run: |
           python - <<'PY'
           import ast, pathlib, sys

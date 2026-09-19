@@ -25,6 +25,9 @@ jobs:
           # 3.12 这一格正是用来补那个盲区的。
           python-version: "3.12"
           cache: pip
+          # 本 skill 的依赖清单在 scripts/ 下，根目录没有 requirements.txt /
+          # pyproject.toml——不指路的话 setup-python 会直接报错退出（不是降级为无缓存）。
+          cache-dependency-path: scripts/ci_requirements.txt
 
       - name: 安装依赖
         run: |

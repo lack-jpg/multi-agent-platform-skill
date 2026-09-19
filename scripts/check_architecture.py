@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """架构一致性校验（conformance check）——把 SKILL.md §10 的评审 checklist 变成可失败的断言。
 
 设计目标：让"架构"从**人读的清单**变成**机器可检查的契约**。架构约定改一处时，

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """演示脚本的回归测试（无需 OPENAI_API_KEY）。
 
 用法：

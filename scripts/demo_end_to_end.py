@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """端到端最小可运行 Demo（六层架构 · 真实 LLM + 内存 checkpointer）
 
 本脚本是 multi-agent-platform Skill 的端到端示范。

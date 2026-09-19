@@ -24,6 +24,31 @@
 
 ## [Unreleased]
 
+## [1.1.2] - 2026-09-19
+
+首次在 **Linux CI** 上跑本 skill 的六道闸门后暴露的修复。两处都是 Windows 本机
+**验不出来**的缺陷——正好是"CI 用 3.12 + ubuntu"这一格存在的理由。
+
+### Added
+
+- CI 步骤 7 增静态检查：`scripts/*.py` 开头是 `#!` 即失败。约定见
+  `SKILL_MAINTENANCE.md §7`——shebang 在产物里是**有代价的**（见下 Fixed）。
+  和同步骤的控制台编码防线一样：查的是"有没有"，不是"注释里提没提"。
+
+### Fixed
+
+- **产物 CI 一开箱就红：`ruff EXE001`（shebang 存在但文件不可执行）**。
+  `copy_architecture_checker()` 把 `check_architecture.py` 原样复制进产物，
+  shebang 一并带过去，而产物自己的 CI 有 `ruff check .` 一步。
+  **1.1.1 新增的 L1 产物 ruff 级第一次跑就抓到了它**——此前这条路径能一路绿灯到用户手里。
+  修法是去掉 `scripts/` 全部 7 个脚本的 shebang（不是 `chmod +x`）：调用方式全是
+  `python scripts/xxx.py`，本 skill 又面向 Windows 生成（`write_text` 落盘 0644，
+  git 在 `core.fileMode=false` 下也只记 100644），到 Linux checkout 照样没有执行位。
+- **CI 首轮 10 秒失败，六道闸门一道没跑**：`actions/setup-python` 的 `cache: pip`
+  默认只找根目录的 `requirements.txt` / `pyproject.toml`，而本 skill 的依赖清单在
+  `scripts/ci_requirements.txt`——**找不到是直接报错退出，不是降级为无缓存**。
+  已加 `cache-dependency-path` 指路。
+
 ## [1.1.1] - 2026-09-19
 
 一轮三方审计（自查 + 两个独立评审）后的修复。主题是**"什么都没检查"与"检查通过"输出一样**

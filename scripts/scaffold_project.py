@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Scaffold a multi-agent platform project following the gov_AP six-layer architecture.
 
 Usage:

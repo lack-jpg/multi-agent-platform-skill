@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Scaffold 产物验收回归：生成 → 冒烟 → 测试 → 架构校验。
 
 这是 scaffold_project.py 的验收标准。它存在的理由：

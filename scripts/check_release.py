@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """发布纪律校验：`VERSION` ↔ `CHANGELOG.md` 必须一致。
 
 用法：

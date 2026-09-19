@@ -119,6 +119,15 @@ multi-agent-platform/
   CI 步骤 7 静态检查此条，**查 AST 不查子串**——注释里提一句 `reconfigure`、
   或把调用改名成 `reconfigure_DISABLED`，都会骗过子串查法（都实测过）。
   无参数的 `reconfigure()` 也不算数：它不改编码。
+- ⚠️ **`scripts/` 下的脚本一律不带 shebang**（`#!/usr/bin/env python3` 也不行）。
+  调用方式全是 `python scripts/xxx.py`，从来不 `./scripts/xxx.py`，shebang 是纯装饰；
+  但它是**有代价的**：产物 CI 里那步 `ruff check .` 会报 `EXE001`（有 shebang 却无执行位），
+  而**本机在 Windows 上永远报不出来**——本地 ruff 不查这一条，Linux CI 一跑就红。
+  已踩过：CI 闸门 5 首轮就是这么挂的（`check_architecture.py` 被原样复制进产物）。
+  为什么不干脆 `chmod +x`：本 skill 面向 Windows 生成，`write_text` 落盘 0644，
+  且 git 在 `core.fileMode=false` 下一律记 100644，到 Linux checkout 出来照样没有执行位
+  ——**去掉 shebang 是唯一跨平台稳的解**。
+  CI 步骤 7 静态检查此条：见脚本开头是 `#!` 即失败。
 - 任何对 `demo_end_to_end.py` 或 `scaffold_project.py` 的修改都必须：
   1. 保持 `python scripts/test_demo.py` **全绿**（不依赖 API key）；
   2. 保持 `python scripts/test_scaffold.py` **全绿**——它才是 scaffold 的验收门槛：

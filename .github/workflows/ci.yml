@@ -89,7 +89,7 @@ jobs:
                       return True
               return False
 
-          bad, unguarded = [], []
+          bad, unguarded, shebanged = [], [], []
           for p in sorted(pathlib.Path("scripts").glob("*.py")):
               src = p.read_text(encoding="utf-8")
               try:
@@ -97,6 +97,14 @@ jobs:
               except SyntaxError as e:
                   bad.append(f"{p}: {e}")
                   continue
+              # 有 shebang 却没有可执行位 = ruff EXE001（产物 CI 的 `ruff check .` 会挂）。
+              # 本 skill 的脚本一律 `python scripts/xxx.py` 调用，从不 `./scripts/xxx.py`，
+              # 所以 shebang 是纯装饰；而"带上可执行位"这条路走不通——本 skill 面向
+              # Windows 生成（`write_text` 落盘 0644），git 在 core.fileMode=false 下也只记
+              # 100644，到 Linux CI checkout 出来照样没有执行位。**去掉 shebang 是唯一稳的解。**
+              # 同理 CI 跑 Linux 才能发现：Windows 上 ruff 不报 EXE001。
+              if src.startswith("#!"):
+                  shebanged.append(str(p))
               # Windows GBK 控制台下，print 出 ✓ ⚠ ✅ 这类符号会 UnicodeEncodeError。
               # 中文本身 GBK 编得出，崩的是符号——**CI 跑在 Linux 上永远发现不了**，
               # 所以只能静态查"有没有那段 reconfigure 防线"。
@@ -110,7 +118,10 @@ jobs:
           if unguarded:
               print("缺少控制台编码防线（见 SKILL_MAINTENANCE.md §7）:")
               print("\n".join("  " + u for u in unguarded))
-          if bad or unguarded:
+          if shebanged:
+              print("脚本带 shebang 但无执行位（产物 CI 会报 ruff EXE001，见 SKILL_MAINTENANCE.md §7）:")
+              print("\n".join("  " + s for s in shebanged))
+          if bad or unguarded or shebanged:
               sys.exit(1)
-          print("全部脚本符合 Python 3.12 语法，且都有控制台编码防线")
+          print("全部脚本符合 Python 3.12 语法，都有控制台编码防线，且都不带 shebang")
           PY
